@@ -3,7 +3,7 @@
   "displayName": "Git Line Authors",
   "description": "Shows lines and percentage written by each contributor in the current file",
   "version": "0.1.0",
-  "publisher": "commitsplit",
+  "publisher": "RupeshBabu",
   "license": "MIT",
   "repository": {
     "type": "git",
