@@ -29,6 +29,13 @@
           "group": "navigation",
           "when": "editorIsOpen"
         }
+      ],
+      "explorer/context": [
+        {
+          "command": "gitLineAuthors.showAuthorsInPanel",
+          "group": "navigation",
+          "when": "!explorerResourceIsFolder"
+        }
       ]
     },
     "configuration": {

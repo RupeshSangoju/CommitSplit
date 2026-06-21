@@ -7,6 +7,26 @@ import {
   disposeStatusBar,
 } from "./statusBar";
 
+async function resolveTargetFile(
+  uri: vscode.Uri | undefined
+): Promise<vscode.Uri | undefined> {
+  if (uri && uri.scheme === "file") {
+    return uri;
+  }
+
+  const editor = vscode.window.activeTextEditor;
+  if (editor && !editor.document.isUntitled && editor.document.uri.scheme === "file") {
+    return editor.document.uri;
+  }
+
+  const picked = await vscode.window.showOpenDialog({
+    canSelectMany: false,
+    canSelectFolders: false,
+    openLabel: "Show Author Stats",
+  });
+  return picked?.[0];
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(getOrCreateStatusBarItem());
 
@@ -43,16 +63,11 @@ export function activate(context: vscode.ExtensionContext): void {
   refresh(vscode.window.activeTextEditor);
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("gitLineAuthors.showAuthors", async () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        vscode.window.showWarningMessage("No file is currently open.");
-        return;
-      }
-      if (editor.document.isUntitled || editor.document.uri.scheme !== "file") {
-        vscode.window.showWarningMessage(
-          "Git Line Authors only works with saved files."
-        );
+    vscode.commands.registerCommand(
+      "gitLineAuthors.showAuthors",
+      async (uri?: vscode.Uri) => {
+      const target = await resolveTargetFile(uri);
+      if (!target) {
         return;
       }
 
@@ -67,7 +82,7 @@ export function activate(context: vscode.ExtensionContext): void {
             const config = vscode.workspace.getConfiguration("gitLineAuthors");
             const ignoreWS = config.get<boolean>("ignoreWhitespaceOnly", true);
             const result = await getBlameStats(
-              editor.document.uri.fsPath,
+              target.fsPath,
               ignoreWS
             );
 
@@ -106,25 +121,16 @@ export function activate(context: vscode.ExtensionContext): void {
           }
         }
       );
-    })
+      }
+    )
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "gitLineAuthors.showAuthorsInPanel",
-      async () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-          vscode.window.showWarningMessage("No file is currently open.");
-          return;
-        }
-        if (
-          editor.document.isUntitled ||
-          editor.document.uri.scheme !== "file"
-        ) {
-          vscode.window.showWarningMessage(
-            "Git Line Authors only works with saved files."
-          );
+      async (uri?: vscode.Uri) => {
+        const target = await resolveTargetFile(uri);
+        if (!target) {
           return;
         }
 
@@ -143,7 +149,7 @@ export function activate(context: vscode.ExtensionContext): void {
                 true
               );
               const result = await getBlameStats(
-                editor.document.uri.fsPath,
+                target.fsPath,
                 ignoreWS
               );
 
