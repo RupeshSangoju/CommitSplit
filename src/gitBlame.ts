@@ -15,11 +15,6 @@ export interface BlameResult {
   isGitRepo: boolean;
 }
 
-interface BlameEntry {
-  author: string;
-  email: string;
-}
-
 function runCommand(cmd: string, cwd: string): Promise<string> {
   return new Promise((resolve, reject) => {
     cp.exec(cmd, { cwd, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
@@ -61,21 +56,28 @@ export async function getBlameStats(
   );
 
   const authorMap = new Map<string, { email: string; lines: number }>();
+  // git blame --porcelain only emits author/author-mail the first time a
+  // commit's hash appears in the output; later lines from the same commit
+  // (whether contiguous or in a separate chunk) only repeat the hash.
+  const commitInfo = new Map<string, { author: string; email: string }>();
   let totalLines = 0;
 
   const lines = blameOutput.split("\n");
-  const entries: BlameEntry[] = [];
 
+  let currentSha = "";
   let currentAuthor = "";
   let currentEmail = "";
   let inEntry = false;
 
   for (const line of lines) {
-    if (/^[0-9a-f]{40} \d+ \d+ \d+/.test(line)) {
-      // New blame entry header
+    if (/^[0-9a-f]{40} \d+ \d+/.test(line)) {
+      // New blame entry header (the trailing line-count field is only
+      // present on the first line of a chunk, so don't require it)
       inEntry = true;
-      currentAuthor = "";
-      currentEmail = "";
+      currentSha = line.slice(0, 40);
+      const cached = commitInfo.get(currentSha);
+      currentAuthor = cached?.author ?? "";
+      currentEmail = cached?.email ?? "";
     } else if (inEntry && line.startsWith("author ")) {
       currentAuthor = line.slice("author ".length).trim();
     } else if (inEntry && line.startsWith("author-mail ")) {
@@ -83,26 +85,22 @@ export async function getBlameStats(
         .slice("author-mail ".length)
         .trim()
         .replace(/^<|>$/g, "");
+      commitInfo.set(currentSha, { author: currentAuthor, email: currentEmail });
     } else if (inEntry && line.startsWith("\t")) {
       // The actual source line content (tab-prefixed in porcelain)
       const content = line.slice(1);
       const isWhitespaceOnly = content.trim().length === 0;
 
       if (!ignoreWhitespace || !isWhitespaceOnly) {
-        entries.push({ author: currentAuthor, email: currentEmail });
+        const existing = authorMap.get(currentAuthor);
+        if (existing) {
+          existing.lines++;
+        } else {
+          authorMap.set(currentAuthor, { email: currentEmail, lines: 1 });
+        }
         totalLines++;
       }
       inEntry = false;
-    }
-  }
-
-  for (const entry of entries) {
-    const key = entry.author;
-    const existing = authorMap.get(key);
-    if (existing) {
-      existing.lines++;
-    } else {
-      authorMap.set(key, { email: entry.email, lines: 1 });
     }
   }
 

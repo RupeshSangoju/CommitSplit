@@ -32,19 +32,26 @@ def get_blame_stats(filepath, ignore_whitespace=True):
 
     output = run(["git", "blame", "--porcelain", filepath], dirpath)
 
+    # git blame --porcelain only emits author/author-mail the first time a
+    # commit appears; repeat lines from the same commit only show the hash.
+    commit_info = {}
     author_map = defaultdict(lambda: {"email": "", "lines": 0})
     total_lines = 0
+    current_sha = None
     current_author = current_email = ""
     in_entry = False
 
     for line in output.split("\n"):
         if len(line) > 40 and line[:40].isalnum() and line[40] == " ":
             in_entry = True
-            current_author = current_email = ""
+            current_sha = line[:40]
+            cached = commit_info.get(current_sha)
+            current_author, current_email = (cached["author"], cached["email"]) if cached else ("", "")
         elif in_entry and line.startswith("author "):
             current_author = line[7:].strip()
         elif in_entry and line.startswith("author-mail "):
             current_email = line[12:].strip().strip("<>")
+            commit_info[current_sha] = {"author": current_author, "email": current_email}
         elif in_entry and line.startswith("\t"):
             if not ignore_whitespace or line[1:].strip():
                 author_map[current_author]["email"] = current_email
