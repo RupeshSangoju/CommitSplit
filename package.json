@@ -1,0 +1,65 @@
+{
+  "name": "git-line-authors",
+  "displayName": "Git Line Authors",
+  "description": "Shows lines and percentage written by each contributor in the current file",
+  "version": "0.1.0",
+  "publisher": "commitsplit",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["git", "blame", "authors", "contributors", "lines"],
+  "icon": "media/icon.png",
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitLineAuthors.showAuthors",
+        "title": "Git Line Authors: Show Author Stats for Current File"
+      },
+      {
+        "command": "gitLineAuthors.showAuthorsInPanel",
+        "title": "Git Line Authors: Open Author Stats Panel"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "gitLineAuthors.showAuthorsInPanel",
+          "group": "navigation",
+          "when": "editorIsOpen"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Git Line Authors",
+      "properties": {
+        "gitLineAuthors.showOnStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a summary in the status bar when a file is open"
+        },
+        "gitLineAuthors.ignoreWhitespaceOnly": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ignore lines that contain only whitespace when calculating stats"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}
