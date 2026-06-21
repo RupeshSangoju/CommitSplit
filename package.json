@@ -4,6 +4,11 @@
   "description": "Shows lines and percentage written by each contributor in the current file",
   "version": "0.1.0",
   "publisher": "commitsplit",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rupeshsangoju/commitsplit.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
