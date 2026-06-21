@@ -9,7 +9,6 @@
   },
   "categories": ["Other"],
   "keywords": ["git", "blame", "authors", "contributors", "lines"],
-  "icon": "media/icon.png",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
